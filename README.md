@@ -45,4 +45,96 @@ Flatten the index,confidence.
 ### Step8:
 Display the result.
 
+## I)Perform ROI from an image
+### PROGRAM:
+```py
+import cv2
+import numpy as np
 
+image = cv2.imread('trex.jpeg')
+image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+cv2.imshow('Original Image', image_rgb)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+```py
+roi_mask = np.zeros_like(image_rgb)
+roi_mask[100:300, 200:400, :] = 255  
+segmented_roi = cv2.bitwise_and(image_rgb, roi_mask)
+cv2.imshow('Segmented ROI', segmented_roi)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+```
+### OUTPUT:
+
+![image](https://github.com/shalini-venkatesan/project/assets/118720291/0fe35000-f011-4084-b96e-b72e59afda1d)
+
+![image](https://github.com/shalini-venkatesan/project/assets/118720291/fb6f247c-3a0e-4ca5-a6be-7770d4b99439)
+
+## II)Perform handwritting detection in an image
+### PROGRAM:
+```py
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+def detect_handwriting(image_path):
+    img = cv2.imread(image_path)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blurred, 50, 150)
+    contours, _ = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    min_area = 100
+    text_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
+    img_copy = img.copy()
+    for contour in text_contours:
+        x, y, w, h = cv2.boundingRect(contour)
+        cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        
+    img_rgb = cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB)
+    plt.imshow(img_rgb)
+    plt.title('Handwriting Detection')
+    plt.axis('off')
+    plt.show()
+    
+image_path = 'hand.jpeg'
+detect_handwriting(image_path)
+```
+### OUTPUT:
+
+![image](https://github.com/shalini-venkatesan/project/assets/118720291/0309dc36-9700-40a0-b0ac-103c3e68f6bb)
+
+## III)Perform object detection with label in an image
+### PROGRAM:
+```py
+config_file='ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt'
+frozen_model='frozen_inference_graph.pb'
+
+model=cv2.dnn_DetectionModel(frozen_model,config_file)
+
+classLabels = []
+file_name='Labels.txt'
+with open(file_name,'rt')as fpt:
+    classLabels=fpt.read().rstrip('\n').split('\n')
+
+print(classLabels)
+print(len(classLabels))
+img=cv2.imread('bi.jpg')
+plt.imshow(img)
+plt.imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB))
+model.setInputSize(320,320)
+model.setInputScale(1.0/127.5)#255/2=127.5
+model.setInputMean((127.5,127.5,127.5))
+model.setInputSwapRB(True)
+ClassIndex,confidence,bbox=model.detect(img,confThreshold=0.5)
+print(ClassIndex)
+font_scale=3
+font=cv2.FONT_HERSHEY_PLAIN
+for ClassInd,conf,boxes in zip(ClassIndex.flatten(),confidence.flatten(),bbox):
+    cv2.rectangle(img,boxes,(0,0,255),2)
+    cv2.putText(img,classLabels[ClassInd-1],(boxes[0]+10,boxes[1]+40),font,fontScale=font_scale,color=(255,0,0),thickness=1)
+plt.imshow(cv2.cvtColor(img,cv2.COLOR_BGR2RGB))
+```
+### OUTPUT:
+
+![image](https://github.com/shalini-venkatesan/project/assets/118720291/65740b1b-ad3e-47ea-94f9-53cd0faf0a39)
